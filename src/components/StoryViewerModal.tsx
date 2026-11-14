@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useRef, useMemo } from "react";
+import { VerifiedBadge } from "./VerifiedBadge";
 import {
   Dimensions,
   Modal,
@@ -481,6 +482,7 @@ export function StoryViewerModal({
                   <View>
                     <View style={{ flexDirection: "row", alignItems: "center", gap: 6 }}>
                       <Text style={s.authorName}>{currentGroup.displayName}</Text>
+                      <VerifiedBadge username={currentGroup.username} size={13} />
                       <Text style={s.timeAgo}>· {currentStory.timestamp}</Text>
                       {currentStory.closeFriends ? (
                         <View style={s.cfBadge}>

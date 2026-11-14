@@ -7,13 +7,16 @@ export function ScreenHeader({
   title,
   onBack,
   right,
-  onTitlePress
+  onTitlePress,
+  titleRight
 }: {
   title: string;
   onBack?: () => void;
   right?: React.ReactNode;
   /** tocar no título (ex.: @ do perfil para trocar de conta) */
   onTitlePress?: () => void;
+  /** algo logo depois do título (ex.: selo de verificado) */
+  titleRight?: React.ReactNode;
 }) {
   const { colors } = useAppTheme();
   return (
@@ -28,8 +31,14 @@ export function ScreenHeader({
       {onTitlePress ? (
         <Pressable onPress={onTitlePress} hitSlop={10} style={s.tp}>
           <Text style={[s.t, { color: colors.text }]}>{title}</Text>
+          {titleRight}
           <ChevronDown size={16} color={colors.text} />
         </Pressable>
+      ) : titleRight ? (
+        <View style={s.tp}>
+          <Text style={[s.t, { color: colors.text }]}>{title}</Text>
+          {titleRight}
+        </View>
       ) : (
         <Text style={[s.t, { color: colors.text }]}>{title}</Text>
       )}

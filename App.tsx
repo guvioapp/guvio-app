@@ -33,6 +33,7 @@ import { FeedPost, UserProfile, DirectThread, ClothingTag } from "./src/data/moc
 import { MyProfileView, PublicProfileView, SimpleSettingsPage } from "./src/components/ProfileViews";
 import { SettingsView } from "./src/components/SettingsHome";
 import { DevToolsView } from "./src/components/DevToolsView";
+import { VerificationView } from "./src/components/VerificationView";
 import { DirectView } from "./src/components/DirectView";
 import { ActivityView } from "./src/components/ActivityView";
 import { CreateHubView } from "./src/components/CreateHubView";
@@ -70,6 +71,7 @@ import { StoryEditorHost } from "./src/components/story/StoryEditor";
 import { openNewHighlight } from "./src/components/HighlightsRow";
 import { AccountSwitcherHost, setAppRestarter } from "./src/components/AccountSwitcher";
 import { IntroSplash, markAppReady } from "./src/components/IntroSplash";
+import { loadVerifiedCache, refreshVerified } from "./src/services/verified";
 import { BETA, isDevMode, setDevMode, startDevLogCapture, useDevMode } from "./src/services/devMode";
 import { currentUserId, forgetAccount, rememberCurrentAccount, updateStoredToken } from "./src/services/accounts";
 import { PushPrompt } from "./src/components/PushPrompt";
@@ -314,6 +316,7 @@ function Guvio() {
   // Inicialização: cache local, clima, sessão salva e retorno de login (Google/Apple/e-mail)
   useEffect(() => {
     FastStorage.init().then(async () => {
+      loadVerifiedCache();
       const initialUrl = await Linking.getInitialURL().catch(() => null);
       // abriu o link de "Esqueci minha senha"
       if (openedFromRecoveryLink) {
@@ -393,6 +396,7 @@ function Guvio() {
 
     isCloud().then(cloud => {
       if (!cloud) return;
+      refreshVerified();
       // avisos com o app fechado: confirma a inscrição deste aparelho na conta atual
       refreshPushRegistration();
       rememberCurrentAccount().catch(() => {});
@@ -787,6 +791,8 @@ function Guvio() {
             <FeedbackView onBack={back} />
           ) : top.kind === "devtools" ? (
             <DevToolsView onBack={back} />
+          ) : top.kind === "verification" ? (
+            <VerificationView onBack={back} />
           ) : top.kind === "admin" ? (
             <AdminView onBack={back} onOpenPost={openPost} onOpenProfile={openName} />
           ) : (

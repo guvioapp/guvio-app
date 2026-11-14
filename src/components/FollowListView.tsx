@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { VerifiedBadge } from "./VerifiedBadge";
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { UserProfile } from "../data/mockData";
 import { useAppTheme } from "../context/AppTheme";
@@ -56,7 +57,7 @@ export function FollowListView({
               <Pressable key={p.id} onPress={() => onOpenProfile(p)} style={[s.row, { borderBottomColor: colors.border }]}>
                 <FastImage source={p.avatar} style={s.avatar} />
                 <View style={{ flex: 1 }}>
-                  <Text style={{ color: colors.text, fontWeight: "600" }}>@{p.username}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}><Text style={{ color: colors.text, fontWeight: "600" }}>@{p.username}</Text><VerifiedBadge id={p.id} username={p.username} size={13} /></View>
                   <Text style={{ color: colors.muted, fontSize: 12 }}>{p.displayName}</Text>
                 </View>
                 {p.id !== myId ? (

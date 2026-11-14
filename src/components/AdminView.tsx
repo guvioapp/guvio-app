@@ -1,11 +1,13 @@
 import React, { useCallback, useEffect, useState } from "react";
-import { ActivityIndicator, Alert, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
+import { ActivityIndicator, Alert, Linking, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from "react-native";
 import { useAppTheme } from "../context/AppTheme";
 import { ScreenHeader } from "./ScreenHeader";
+import { setVerifiedLocal } from "../services/verified";
 import { FastImage } from "./FastImage";
-import { adminDecideRequest, adminDeletePost, adminDismissReports, adminListRequests, adminOverview, AdminOverview, AdminRequest, timeAgo } from "../services/cloud";
+import { toast } from "./motion";
+import { adminListVerification, adminSetVerified, VerificationRequest, adminDecideRequest, adminDeletePost, adminDismissReports, adminListRequests, adminOverview, AdminOverview, AdminRequest, timeAgo } from "../services/cloud";
 
-type Tab = "reports" | "requests" | "feedback" | "users" | "posts";
+type Tab = "reports" | "verify" | "requests" | "feedback" | "users" | "posts";
 
 /** Painel do criador: números do beta, denúncias, feedbacks, quem entrou e looks recentes */
 export function AdminView({ onBack, onOpenPost, onOpenProfile }: { onBack: () => void; onOpenPost?: (id: string) => void; onOpenProfile?: (username: string) => void }) {
@@ -16,8 +18,19 @@ export function AdminView({ onBack, onOpenPost, onOpenProfile }: { onBack: () =>
   const [tab, setTab] = useState<Tab>("reports");
 
   const [requests, setRequests] = useState<AdminRequest[] | null>(null);
+  const [verifyReqs, setVerifyReqs] = useState<VerificationRequest[] | null>(null);
+  const [verifyError, setVerifyError] = useState<string | null>(null);
   const [reqError, setReqError] = useState<string | null>(null);
   const load = useCallback(async () => {
+    adminListVerification()
+      .then(r => {
+        setVerifyReqs(r);
+        setVerifyError(null);
+      })
+      .catch(e => {
+        setVerifyReqs([]);
+        setVerifyError(e?.message || "Não foi possível carregar.");
+      });
     adminListRequests()
       .then(r => {
         setRequests(r);
@@ -60,6 +73,17 @@ export function AdminView({ onBack, onOpenPost, onOpenProfile }: { onBack: () =>
         }
       }
     ]);
+
+  const decideVerify = async (r: VerificationRequest, approve: boolean) => {
+    try {
+      await adminSetVerified(r.user_id, approve);
+      setVerifiedLocal({ id: r.user_id, username: r.username }, approve);
+      setVerifyReqs(prev => (prev || []).filter(x => x.user_id !== r.user_id));
+      toast(approve ? `@${r.username} agora é verificado` : "Pedido recusado");
+    } catch (e: any) {
+      Alert.alert("Erro", e?.message || "Tente de novo.");
+    }
+  };
 
   const decide = (r: AdminRequest, approve: boolean) =>
     Alert.alert(
@@ -104,6 +128,7 @@ export function AdminView({ onBack, onOpenPost, onOpenProfile }: { onBack: () =>
 
   const tabs: [Tab, string][] = [
     ["reports", `Denúncias${data?.reports.length ? ` (${data.reports.length})` : ""}`],
+    ["verify", `Verificação${verifyReqs?.length ? ` (${verifyReqs.length})` : ""}`],
     ["requests", `Pedidos${requests?.length ? ` (${requests.length})` : ""}`],
     ["feedback", "Feedbacks"],
     ["users", "Quem entrou"],
@@ -191,6 +216,40 @@ export function AdminView({ onBack, onOpenPost, onOpenProfile }: { onBack: () =>
                 </View>
               ))
             )
+          ) : tab === "verify" ? (
+            verifyError ? (
+              <Empty text={verifyError} />
+            ) : !verifyReqs?.length ? (
+              <Empty text="Nenhum pedido de verificação. Para dar o selo direto, abra o perfil da pessoa e toque em ··· → Dar selo de verificado." />
+            ) : (
+              verifyReqs.map(r => (
+                <View key={r.user_id} style={[s.vcard, { borderBottomColor: colors.border }]}>
+                  <Pressable onPress={() => onOpenProfile?.(r.username)} style={{ flexDirection: "row", alignItems: "center", gap: 10 }}>
+                    <FastImage source={r.avatar_url || ""} style={s.avatar} contentFit="cover" />
+                    <View style={{ flex: 1 }}>
+                      <Text style={{ color: colors.text, fontWeight: "700" }}>@{r.username}</Text>
+                      <Text style={{ color: colors.muted, fontSize: 12 }}>
+                        {r.category || "sem categoria"} · {r.followers} seguidores · {timeAgo(r.created_at)}
+                      </Text>
+                    </View>
+                  </Pressable>
+                  {r.reason ? <Text style={{ color: colors.text, marginTop: 8 }}>{r.reason}</Text> : null}
+                  {r.link ? (
+                    <Text style={{ color: "#0095F6", marginTop: 4 }} onPress={() => Linking.openURL(/^https?:/i.test(r.link!) ? r.link! : `https://${r.link}`).catch(() => {})}>
+                      {r.link}
+                    </Text>
+                  ) : null}
+                  <View style={{ flexDirection: "row", gap: 10, marginTop: 10 }}>
+                    <Pressable onPress={() => decideVerify(r, true)} style={[s.reqBtn, { backgroundColor: "#0095F6", flex: 1, alignItems: "center" }]}>
+                      <Text style={{ color: "#FFF", fontWeight: "700" }}>Verificar</Text>
+                    </Pressable>
+                    <Pressable onPress={() => decideVerify(r, false)} style={[s.reqBtn, { backgroundColor: colors.surface, flex: 1, alignItems: "center" }]}>
+                      <Text style={{ color: colors.text, fontWeight: "700" }}>Recusar</Text>
+                    </Pressable>
+                  </View>
+                </View>
+              ))
+            )
           ) : tab === "requests" ? (
             reqError ? (
               <Empty text={reqError} />
@@ -255,6 +314,7 @@ export function AdminView({ onBack, onOpenPost, onOpenProfile }: { onBack: () =>
 }
 
 const s = StyleSheet.create({
+  vcard: { paddingVertical: 14, borderBottomWidth: StyleSheet.hairlineWidth },
   reqBtn: { paddingHorizontal: 12, paddingVertical: 7, borderRadius: 10 },
   stats: { flexDirection: "row", flexWrap: "wrap", gap: 8, padding: 16 },
   stat: { width: "31%", flexGrow: 1, borderRadius: 14, padding: 12, gap: 1 },

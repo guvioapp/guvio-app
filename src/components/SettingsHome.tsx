@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
   Archive,
+  BadgeCheck,
   Bell,
   Bookmark,
   ChevronRight,
@@ -153,7 +154,10 @@ export function SettingsView({
         : []),
       {
         title: "Sua conta",
-        rows: [{ id: "accounts", l: "Trocar ou adicionar conta", i: Users, onPress: openAccountSwitcher, k: "central de contas login" }]
+        rows: [
+          { id: "accounts", l: "Trocar ou adicionar conta", i: Users, onPress: openAccountSwitcher, k: "central de contas login" },
+          { id: "verification", l: "Solicitar verificação", i: BadgeCheck, hint: "Selo azul ao lado do seu @", k: "verificado selo azul" }
+        ]
       },
       {
         title: "Como você usa o GUVIO",

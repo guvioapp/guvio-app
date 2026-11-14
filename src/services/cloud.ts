@@ -885,6 +885,44 @@ export async function adminOverview(): Promise<AdminOverview> {
   return data as AdminOverview;
 }
 
+// ---------- selo de verificado ----------
+const need014 = (m: string) => (/function|does not exist|column/i.test(m) ? "Falta rodar a migração 014 no Supabase." : m);
+export async function fetchVerifiedUsers(): Promise<{ id: string; username: string }[]> {
+  const { data, error } = await db().rpc("verified_users");
+  if (error) throw new Error(error.message);
+  return (data || []) as { id: string; username: string }[];
+}
+export type VerificationStatus = "pending" | "approved" | "denied" | "verified" | null;
+export async function myVerification(): Promise<VerificationStatus> {
+  const { data, error } = await db().rpc("my_verification");
+  if (error) return null;
+  return (data as VerificationStatus) || null;
+}
+export async function requestVerification(category: string, reason: string, link?: string): Promise<string> {
+  const { data, error } = await db().rpc("request_verification", { p_category: category, p_reason: reason, p_link: link || null });
+  if (error) throw new Error(need014(error.message));
+  return String(data);
+}
+export interface VerificationRequest {
+  user_id: string;
+  username: string;
+  avatar_url: string | null;
+  followers: number;
+  category: string | null;
+  reason: string | null;
+  link: string | null;
+  created_at: string;
+}
+export async function adminListVerification(): Promise<VerificationRequest[]> {
+  const { data, error } = await db().rpc("admin_list_verification");
+  if (error) throw new Error(need014(error.message));
+  return (data || []) as VerificationRequest[];
+}
+export async function adminSetVerified(userId: string, verified: boolean) {
+  const { error } = await db().rpc("admin_set_verified", { p_user: userId, p_verified: verified });
+  if (error) throw new Error(need014(error.message));
+}
+
 // ---------- pedidos de acesso de admin (modo desenvolvedor) ----------
 export type AdminRequestStatus = "pending" | "approved" | "denied" | "admin" | null;
 export async function requestAdmin(note?: string): Promise<string> {

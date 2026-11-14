@@ -1,4 +1,8 @@
 import React, { useState, useEffect } from "react";
+import { VerifiedBadge } from "./VerifiedBadge";
+import { setVerifiedLocal, useVerified } from "../services/verified";
+import { adminSetVerified } from "../services/cloud";
+import { toast } from "./motion";
 import { ActivityIndicator, Alert, Modal, Platform, Pressable, ScrollView, StyleSheet, Switch, Text, TextInput, View } from "react-native";
 import {
   Bookmark,
@@ -192,8 +196,28 @@ export function PublicProfileView({
     if (tab === "tagged" && tagged === null) loadTaggedPosts(profile.username).then(setTagged);
   }, [tab]);
 
+  // admin: dar ou tirar o selo de verificado direto no perfil
+  const [amAdmin, setAmAdmin] = useState(false);
+  const verified = useVerified({ id: profile.id, username: profile.username });
+  useEffect(() => {
+    isCloud()
+      .then(c => (c ? isAdmin() : false))
+      .then(setAmAdmin)
+      .catch(() => {});
+  }, []);
+  const toggleVerified = async () => {
+    try {
+      await adminSetVerified(profile.id, !verified);
+      setVerifiedLocal({ id: profile.id, username: profile.username }, !verified);
+      toast(!verified ? `@${profile.username} agora é verificado` : "Selo removido");
+    } catch (e: any) {
+      Alert.alert("Erro", e?.message || "Tente de novo.");
+    }
+  };
+
   const openMenu = () =>
     Alert.alert(`@${profile.username}`, undefined, [
+      ...(amAdmin ? [{ text: verified ? "Admin: tirar selo de verificado" : "Admin: dar selo de verificado", onPress: toggleVerified }] : []),
       {
         text: muted ? "Reativar no feed" : "Silenciar",
         onPress: async () => {
@@ -274,6 +298,7 @@ export function PublicProfileView({
       <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: 110 }}>
         <ScreenHeader
           title={`@${profile.username}`}
+          titleRight={<VerifiedBadge id={profile.id} username={profile.username} size={16} />}
           onBack={onBack}
           right={
             <Pressable onPress={openMenu} hitSlop={10}>
@@ -610,6 +635,7 @@ export function MyProfileView({
       <ScrollView style={{ flex: 1, backgroundColor: colors.bg }} contentContainerStyle={{ paddingBottom: 110 }}>
         <ScreenHeader
           title={`@${profile.username}`}
+          titleRight={<VerifiedBadge id={profile.id} username={profile.username} size={16} />}
           onTitlePress={openAccountSwitcher}
           right={
             <Pressable onPress={onSettings}>

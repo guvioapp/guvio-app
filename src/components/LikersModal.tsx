@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { VerifiedBadge } from "./VerifiedBadge";
 import { ActivityIndicator, Modal, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { X } from "lucide-react-native";
 import { UserProfile } from "../data/mockData";
@@ -47,7 +48,7 @@ export function LikersModal({
                 <Pressable key={p.id} onPress={() => onOpenProfile?.(p.username)} style={s.row}>
                   <FastImage source={p.avatar} style={s.avatar} />
                   <View style={{ flex: 1 }}>
-                    <Text style={{ color: colors.text, fontWeight: "600" }}>@{p.username}</Text>
+                    <View style={{ flexDirection: "row", alignItems: "center" }}><Text style={{ color: colors.text, fontWeight: "600" }}>@{p.username}</Text><VerifiedBadge id={p.id} username={p.username} size={13} /></View>
                     <Text style={{ color: colors.muted, fontSize: 12 }} numberOfLines={1}>
                       {p.displayName}
                     </Text>

@@ -1,4 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from "react";
+import { VerifiedBadge } from "./VerifiedBadge";
 import { ActivityIndicator, Dimensions, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { BadgeCheck, Heart, Clock3, Compass, Hash, Search, TrendingUp, Users, X } from "lucide-react-native";
 import { FeedPost, UserProfile } from "../data/mockData";
@@ -212,7 +213,7 @@ export function SearchProfilesView({
             <View style={{ flex: 1 }}>
               <View style={s.name}>
                 <Text style={[s.user, { color: colors.text }]}>@{p.username}</Text>
-                {p.verified ? <BadgeCheck size={15} color="#0095F6" /> : null}
+                <VerifiedBadge id={p.id} username={p.username} size={14} force={!!p.verified} />
               </View>
               <Text style={{ color: colors.muted, fontSize: 12 }}>
                 {p.displayName} {p.location ? `· ${p.location}` : ""}

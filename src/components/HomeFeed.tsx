@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { VerifiedBadge } from "./VerifiedBadge";
 import { Alert, Animated, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
 import { noSwipeBack } from "./gestures";
 import {
@@ -544,7 +545,10 @@ export function HomeFeed({
                       );
                     })()}
                     <View style={{ flex: 1 }}>
-                      <Text style={[s.creator, { color: colors.text }]}>{p.creatorName}</Text>
+                      <View style={{ flexDirection: "row", alignItems: "center" }}>
+                        <Text style={[s.creator, { color: colors.text }]}>{p.creatorName}</Text>
+                        <VerifiedBadge id={p.userId} username={p.creatorUsername} size={13} />
+                      </View>
                       {p.city || p.country ? (
                         <View style={s.loc}>
                           <MapPin size={11} color={colors.muted} />

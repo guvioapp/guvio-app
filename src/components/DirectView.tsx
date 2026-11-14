@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { VerifiedBadge } from "./VerifiedBadge";
 import { Alert, BackHandler, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { topPad } from "../utils/insets";
 import { MessageCircle, Search, SquarePen, X } from "lucide-react-native";
@@ -165,7 +166,7 @@ export function DirectView({
               >
                 <FastImage source={p.avatar} style={s.avatar} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[s.user, { color: colors.text }]}>@{p.username}</Text>
+                  <View style={{ flexDirection: "row", alignItems: "center" }}><Text style={[s.user, { color: colors.text }]}>@{p.username}</Text><VerifiedBadge id={p.id} username={p.username} size={13} /></View>
                   <Text style={{ color: colors.muted, fontSize: 12 }}>{p.displayName}</Text>
                 </View>
               </Pressable>

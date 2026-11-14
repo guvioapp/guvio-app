@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from "react";
+import { VerifiedBadge } from "./VerifiedBadge";
 import { ReelsViewer } from "./ReelsViewer";
 import { loadFollowedUsers as loadFollowedIds, saveFollowedUsers as saveFollowedIds } from "../services/storage";
 import { ActivityIndicator, Alert, Dimensions, Pressable, ScrollView, StyleSheet, Text, View } from "react-native";
@@ -213,7 +214,10 @@ export function PostCard({
         >
           <FastImage source={post.creatorAvatar} style={s.avatar} />
           <View style={{ flex: 1 }}>
-            <Text style={[s.name, { color: colors.text }]}>{post.creatorName}</Text>
+            <View style={{ flexDirection: "row", alignItems: "center" }}>
+              <Text style={[s.name, { color: colors.text }]}>{post.creatorName}</Text>
+              <VerifiedBadge id={post.userId} username={post.creatorUsername} size={13} />
+            </View>
             {post.city ? (
               <View style={s.place}>
                 <MapPin size={11} color={colors.muted} />
