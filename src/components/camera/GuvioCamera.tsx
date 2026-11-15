@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
+import { track } from "../../services/telemetry";
 import { ActivityIndicator, Alert, Linking, Modal, PanResponder, Platform, Pressable, ScrollView, StatusBar, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CameraView, useCameraPermissions, useMicrophonePermissions } from "expo-camera";
@@ -137,6 +138,7 @@ export function CameraHost({ onResult }: { onResult: (r: CameraResult) => void }
 
   useEffect(() => {
     openFn = m => {
+      track("camera_opened", { mode: m });
       setMode(m);
       setOpen(true);
       setRecording(false);

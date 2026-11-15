@@ -1,3 +1,4 @@
+import { track } from "./telemetry";
 import {
   FeedPost,
   ClothingTag,
@@ -142,7 +143,7 @@ export async function savePosts(posts: FeedPost[]): Promise<void> {
 }
 
 /** Publica um look novo (sobe a foto e cria o post). */
-export async function publishPost(input: {
+async function publishPostImpl(input: {
   image: string;
   caption: string;
   city: string;
@@ -238,6 +239,7 @@ export async function editCaption(postId: string, caption: string): Promise<void
 }
 
 export async function setPostLike(post: FeedPost, on: boolean): Promise<void> {
+  if (on) track("post_liked");
   if (await isCloud()) {
     await cloud.setLike(post.id, on);
     postSnapshot.set(post.id, { ...(postSnapshot.get(post.id) || { isSaved: !!post.isSaved }), isLiked: on, userId: post.userId });
@@ -352,6 +354,7 @@ export async function saveWardrobe(items: WardrobeItem[], userId?: string): Prom
 
 /** Adiciona uma peça (na nuvem sobe a foto) e devolve a peça salva */
 export async function addWardrobeItem(item: WardrobeItem, current: WardrobeItem[], userId?: string): Promise<WardrobeItem[]> {
+  track("wardrobe_item_added");
   if (await isCloud()) {
     const saved = await cloud.addWardrobeItem(item);
     return [saved, ...current];
@@ -552,6 +555,7 @@ export async function saveFollowedUsers(userIds: string[]): Promise<string[]> {
     const requested: string[] = [];
     const jobs: Promise<any>[] = [];
     next.forEach(id => {
+      if (!followingSnapshot.has(id)) track("user_followed");
       if (!followingSnapshot.has(id))
         jobs.push(
           cloud.setFollow(id, true).then(r => {
@@ -641,7 +645,7 @@ export async function loadStoryViewers(storyId: string) {
 
 /** Salva stories. Na nuvem, publica os stories novos do meu grupo. */
 /** publica um story novo (foto, vídeo ou só texto) com camadas e figurinhas */
-export async function publishStory(input: {
+async function publishStoryImpl(input: {
   image: string;
   video?: string | null;
   overlay?: StoryOverlay | null;
@@ -733,6 +737,7 @@ export async function deleteComment(postId: string, commentId: string): Promise<
 }
 
 export async function addComment(postId: string, text: string, parentId?: string | null): Promise<CommentItem[]> {
+  track("comment_added", { reply: !!parentId });
   if (await isCloud()) {
     await cloud.addComment(postId, text, parentId);
     return cloud.fetchComments(postId);
@@ -1020,6 +1025,7 @@ export async function loadOutfits(): Promise<Outfit[]> {
 }
 
 export async function saveOutfit(name: string, itemIds: string[]): Promise<Outfit> {
+  track("outfit_saved", { pieces: itemIds.length });
   if (await isCloud()) return cloud.saveOutfit(name, itemIds);
   const o: Outfit = { id: `outfit-${Date.now()}`, name, itemIds, createdAt: new Date().toISOString() };
   FastStorage.setItemSync(OUTFITS_KEY, [o, ...FastStorage.getItemSync<Outfit[]>(OUTFITS_KEY, [])]);
@@ -1493,4 +1499,17 @@ export async function respondStory(storyId: string, kind: "vote" | "answer", val
 export async function loadStoryResponses(storyId: string) {
   if (await isCloud()) return cloud.fetchStoryResponses(storyId).catch(() => []);
   return (FastStorage.getItemSync(SR_KEY, []) as any[]).filter(r => r.storyId === storyId);
+}
+
+/** publica o look e registra a medição (só depois de dar certo) */
+export async function publishPost(input: Parameters<typeof publishPostImpl>[0]): Promise<FeedPost> {
+  const post = await publishPostImpl(input);
+  track("post_published", { video: !!input.video, photos: (input.images || [input.image]).length, tags: (input.clothingTags || []).length });
+  return post;
+}
+
+/** publica o story e registra a medição */
+export async function publishStory(input: Parameters<typeof publishStoryImpl>[0]): Promise<void> {
+  await publishStoryImpl(input);
+  track("story_published", { video: !!input.video, layers: input.overlay?.layers?.length || 0, sticker: input.sticker?.type || null });
 }

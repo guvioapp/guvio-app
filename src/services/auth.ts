@@ -1,4 +1,5 @@
 import { Platform } from "react-native";
+import { track } from "./telemetry";
 import AsyncStorage from "@react-native-async-storage/async-storage";
 import * as SecureStore from "expo-secure-store";
 import { FastStorage } from "./FastStorage";
@@ -60,6 +61,7 @@ async function cloudSignUp(email: string, password: string, username: string, di
     options: { data: { username, display_name: displayName }, emailRedirectTo: redirectUrl() }
   });
   if (error) throw new Error(translateAuthError(error.message));
+  track("signed_up", { method: "email" });
   if (!data.session) {
     throw new ConfirmEmailError(
       `Conta criada! Enviamos um link de confirmação para ${email}. Abra o e-mail, confirme e depois faça login.`

@@ -35,6 +35,7 @@ import { MyProfileView, PublicProfileView, SimpleSettingsPage } from "./src/comp
 import { SettingsView } from "./src/components/SettingsHome";
 import { DevToolsView } from "./src/components/DevToolsView";
 import { VerificationView } from "./src/components/VerificationView";
+import { AgeGate } from "./src/components/AgeGate";
 import { DirectView } from "./src/components/DirectView";
 import { ActivityView } from "./src/components/ActivityView";
 import { CreateHubView } from "./src/components/CreateHubView";
@@ -76,6 +77,7 @@ import { SuggestionsColumn } from "./src/components/desktop/SuggestionsColumn";
 import { AccountSwitcherHost, setAppRestarter } from "./src/components/AccountSwitcher";
 import { IntroSplash, markAppReady } from "./src/components/IntroSplash";
 import { loadVerifiedCache, refreshVerified } from "./src/services/verified";
+import { identifyUser, initTelemetry, reportError, resetTelemetry } from "./src/services/telemetry";
 import { BETA, isDevMode, setDevMode, startDevLogCapture, useDevMode } from "./src/services/devMode";
 import { currentUserId, forgetAccount, rememberCurrentAccount, updateStoredToken } from "./src/services/accounts";
 import { PushPrompt } from "./src/components/PushPrompt";
@@ -327,6 +329,7 @@ function Guvio() {
   useEffect(() => {
     FastStorage.init().then(async () => {
       loadVerifiedCache();
+      initTelemetry();
       const initialUrl = await Linking.getInitialURL().catch(() => null);
       // abriu o link de "Esqueci minha senha"
       if (openedFromRecoveryLink) {
@@ -370,6 +373,7 @@ function Guvio() {
     const authSub = supabase?.auth.onAuthStateChange((event, session) => {
       if (event === "SIGNED_IN" && session) {
         setAuthenticated(true);
+        identifyUser(session.user.id);
         // guarda esta conta na lista "trocar de conta"
         setTimeout(() => rememberCurrentAccount().catch(() => {}), 1500);
       }
@@ -486,6 +490,7 @@ function Guvio() {
     // e ela sai da lista de contas salvas
     const uid = await currentUserId().catch(() => null);
     if (uid) await forgetAccount(uid);
+    resetTelemetry();
     await signOut();
     setAuthenticated(false);
     setPosts([]);
@@ -603,12 +608,19 @@ function Guvio() {
     return () => clearTimeout(t);
   }, [pendingPost, booting, authenticated]);
 
+  // menos de 13 anos: sai da conta e avisa
+  const ageBlocked = () => {
+    Alert.alert("O GUVIO é para maiores de 13 anos", "Você ainda não tem idade para usar o GUVIO. Volte quando fizer 13 anos!");
+    handleSignOut();
+  };
+
   if (booting) return <View style={[s.safe, { backgroundColor: colors.bg }]} />;
 
   if (!authenticated) return <AuthScreen inviter={inviter} onAuthenticated={() => setAuthenticated(true)} />;
   if (showOnboarding)
     return (
       <SafeAreaView style={[s.safe, { backgroundColor: colors.bg }]}>
+        <AgeGate onBlocked={ageBlocked} />
         <OnboardingView
           onDone={action => {
             setShowOnboarding(false);
@@ -1076,6 +1088,7 @@ function Guvio() {
       <UpdateBanner />
       {top ? null : <InstallPrompt />}
       <NewPasswordModal visible={recovery} onDone={() => setRecovery(false)} />
+      <AgeGate onBlocked={ageBlocked} />
       <CameraHost onResult={onCamera} />
       <StoryEditorHost />
       <CreateSheet visible={createSheet} onClose={() => setCreateSheet(false)} onPick={onCreateChoice} />
@@ -1121,7 +1134,7 @@ export default function App() {
   useEffect(() => setAppRestarter(() => setAppKey(k => k + 1)), []);
   return (
     <AppThemeProvider>
-      <ErrorBoundary>
+      <ErrorBoundary onError={e => reportError(e, "tela")}>
         <SafeAreaProvider>
           <Guvio key={appKey} />
           <RecoverHost />

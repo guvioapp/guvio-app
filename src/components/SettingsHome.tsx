@@ -2,6 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 import { Alert, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import {
   Archive,
+  BarChart3,
   BadgeCheck,
   Bell,
   Bookmark,
@@ -34,6 +35,7 @@ import { loadSavedProfile, saveProfile } from "../services/storage";
 import { canShowInstall, openInstallHelp } from "./InstallPrompt";
 import { openAccountSwitcher } from "./AccountSwitcher";
 import { useDevMode } from "../services/devMode";
+import { analyticsEnabled, setAnalyticsEnabled } from "../services/telemetry";
 import Constants from "expo-constants";
 
 type Row = { id: string; l: string; i: any; hint?: string; right?: React.ReactNode; onPress?: () => void; danger?: boolean; k?: string };
@@ -69,6 +71,12 @@ export function SettingsView({
       .catch(() => {});
   }, []);
 
+  const [analytics, setAnalytics] = useState(() => analyticsEnabled());
+  const toggleAnalytics = () => {
+    const next = !analytics;
+    setAnalytics(next);
+    setAnalyticsEnabled(next);
+  };
   const toggleSaver = () => setSaver(updateSettings({ dataSaver: !saver }).dataSaver);
   const togglePrivate = async () => {
     if (priv === null) return;
@@ -197,6 +205,15 @@ export function SettingsView({
             right: <Toggle value={saver} onValueChange={toggleSaver} />,
             onPress: toggleSaver,
             k: "internet"
+          },
+          {
+            id: "analytics",
+            l: "Compartilhar dados de uso",
+            i: BarChart3,
+            hint: "Ajuda a melhorar o GUVIO. Só o que você usa no app, sem seu nome ou e-mail",
+            right: <Toggle value={analytics} onValueChange={toggleAnalytics} />,
+            onPress: toggleAnalytics,
+            k: "privacidade estatísticas medição"
           }
         ]
       },
@@ -221,7 +238,7 @@ export function SettingsView({
         ]
       }
     ],
-    [admin, dev, priv, saver, pref, colors, deleting]
+    [admin, dev, priv, saver, analytics, pref, colors, deleting]
   );
 
   const needle = q.trim().toLowerCase();

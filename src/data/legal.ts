@@ -13,7 +13,7 @@ export type LegalDoc = { title: string; updated: string; sections: { h: string; 
 export const LEGAL_TEXTS: Record<string, LegalDoc> = {
   privacy: {
     title: "Política de Privacidade",
-    updated: "13 de novembro de 2026",
+    updated: "15 de novembro de 2026",
     sections: [
       {
         h: "1. Quem somos",
@@ -56,7 +56,7 @@ export const LEGAL_TEXTS: Record<string, LegalDoc> = {
         h: "5. Onde os dados ficam e com quem compartilhamos",
         p: [
           "Os dados são armazenados com o provedor de infraestrutura Supabase, com servidores nos Estados Unidos, com medidas de segurança como criptografia em trânsito e regras de acesso por usuário. O site do Guvio é hospedado no GitHub Pages.",
-          "Para o app funcionar, alguns serviços recebem apenas o necessário: o Google (entrar com Google, envio dos e-mails do Guvio pelo Gmail e entrega dos avisos no Android pelo Firebase Cloud Messaging); a Apple (entrar com Apple e entrega dos avisos no iPhone); o Open-Meteo (recebe a localização aproximada para mostrar o clima); e, no site, o BigDataCloud e o OpenStreetMap (recebem a localização aproximada para descobrir o nome da cidade).",
+          "Para o app funcionar, alguns serviços recebem apenas o necessário: o Google (entrar com Google, envio dos e-mails do Guvio pelo Gmail e entrega dos avisos no Android pelo Firebase Cloud Messaging); a Apple (entrar com Apple e entrega dos avisos no iPhone); o Open-Meteo (recebe a localização aproximada para mostrar o clima); no site, o BigDataCloud e o OpenStreetMap (recebem a localização aproximada para descobrir o nome da cidade); o Sentry (recebe relatórios de erro do app, sem nome nem e-mail); e o PostHog, com servidores na União Europeia (recebe o que você usa no app, ligado só ao código da sua conta, para medirmos o que funciona — você pode desligar em Configurações › Compartilhar dados de uso).",
           "Alguns desses serviços ficam fora do Brasil e da União Europeia. Nesses casos, a transferência acontece para cumprir o que você pediu ao usar o app e com as garantias previstas na LGPD e no RGPD. Nenhum deles recebe seus dados para fazer publicidade."
         ]
       },
@@ -69,7 +69,11 @@ export const LEGAL_TEXTS: Record<string, LegalDoc> = {
       },
       {
         h: "7. Crianças",
-        p: ["O Guvio não é destinado a menores de 13 anos. Se você souber de uma conta de criança, avise pelo e-mail de contato para removermos."]
+        p: [
+          "O Guvio não é destinado a menores de 13 anos. Ao entrar, pedimos a sua data de nascimento: ela fica guardada separada do perfil, não aparece para ninguém e serve só para aplicar estas regras.",
+          "Contas de 13 a 17 anos começam privadas, ou seja, só quem a pessoa aprovar vê seus looks e stories.",
+          "Se você souber de uma conta de criança, avise pelo e-mail de contato para removermos."
+        ]
       },
       {
         h: "8. Mudanças",

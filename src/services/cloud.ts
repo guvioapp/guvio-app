@@ -3,6 +3,7 @@
  * está logado na nuvem — quem decide entre nuvem e modo demo é o storage.ts.
  */
 import { Image as RNImage, Platform } from "react-native";
+import { track } from "./telemetry";
 import { supabase, cloudUserId } from "./supabase";
 import type {
   ClothingTag,
@@ -885,6 +886,23 @@ export async function adminOverview(): Promise<AdminOverview> {
   return data as AdminOverview;
 }
 
+// ---------- idade mínima ----------
+/** null = não deu para saber (ex.: migração 015 ainda não rodada) — o app não bloqueia */
+export async function myBirthSet(): Promise<boolean | null> {
+  const { data, error } = await db().rpc("my_birth_set");
+  if (error) return null;
+  return !!data;
+}
+export async function setBirthDate(iso: string): Promise<"adult" | "minor" | "already"> {
+  const { data, error } = await db().rpc("set_birth_date", { p_birth: iso });
+  if (error) {
+    if (/menor_13/.test(error.message)) throw new Error("menor_13");
+    if (/data_invalida/.test(error.message)) throw new Error("Confira a data de nascimento.");
+    throw new Error(error.message);
+  }
+  return data as any;
+}
+
 // ---------- selo de verificado ----------
 const need014 = (m: string) => (/function|does not exist|column/i.test(m) ? "Falta rodar a migração 014 no Supabase." : m);
 export async function fetchVerifiedUsers(): Promise<{ id: string; username: string }[]> {
@@ -1326,6 +1344,7 @@ export async function sendMessage(
   msg: { text?: string; image?: string; postId?: string; replyTo?: string }
 ): Promise<CloudMessage> {
   const uid = await me();
+  track("message_sent", { image: !!msg.image, post: !!msg.postId });
   const image_url = msg.image ? await uploadImage(msg.image, "direct") : null;
   const row = check(
     await db()
