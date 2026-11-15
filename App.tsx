@@ -1,3 +1,4 @@
+import { MessageCircle } from "lucide-react-native";
 import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   ActivityIndicator,
@@ -69,6 +70,9 @@ import { CameraHost, CameraResult, openCamera } from "./src/components/camera/Gu
 import { CreateSheet, CreateChoice } from "./src/components/camera/CreateSheet";
 import { StoryEditorHost } from "./src/components/story/StoryEditor";
 import { openNewHighlight } from "./src/components/HighlightsRow";
+import { useLayout, FEED_WIDTH, PAGE_WIDTH } from "./src/services/layout";
+import { SideNav, SideItem } from "./src/components/desktop/SideNav";
+import { SuggestionsColumn } from "./src/components/desktop/SuggestionsColumn";
 import { AccountSwitcherHost, setAppRestarter } from "./src/components/AccountSwitcher";
 import { IntroSplash, markAppReady } from "./src/components/IntroSplash";
 import { loadVerifiedCache, refreshVerified } from "./src/services/verified";
@@ -139,6 +143,7 @@ function Guvio() {
     setStack(prev => prev.slice(0, -1));
   };
   const top = stack[stack.length - 1];
+  const L = useLayout();
   // botão "voltar" do Android: fecha a tela de cima; depois volta para a Home; só então sai do app
   useEffect(() => {
     startUsageTracking();
@@ -273,6 +278,11 @@ function Guvio() {
   };
   const onCreateChoice = (c: CreateChoice) => {
     if (c === "highlight") return openNewHighlight();
+    // no computador, publicação e vídeo vão direto para escolher o arquivo
+    if (L.wide && (c === "post" || c === "video")) {
+      setStack([]);
+      return setTab("add");
+    }
     openCamera(c);
   };
 
@@ -803,6 +813,39 @@ function Guvio() {
     return screen;
   };
 
+  const openActivity = () => {
+    setUnread(false);
+    markActivitySeen();
+    push({ name: "activity" });
+  };
+  const sideActive: SideItem =
+    top?.name === "direct"
+      ? "direct"
+      : top?.name === "activity"
+      ? "activity"
+      : top?.name === "settings" || top?.name === "settingsPage"
+      ? "more"
+      : tab === "add"
+      ? "create"
+      : (tab as SideItem);
+  const onSide = (i: SideItem) => {
+    tapFeedback();
+    if (i === "direct") return top?.name === "direct" ? null : push({ name: "direct" });
+    if (i === "activity") return top?.name === "activity" ? null : openActivity();
+    if (i === "create") return setCreateSheet(true);
+    if (i === "more") return top?.name === "settings" ? null : push({ name: "settings" });
+    if (i === "home" && tab === "home" && !stack.length) {
+      if (scrollY.current > 40) (scroll.current as any)?.scrollTo({ y: 0, animated: true });
+      else refreshFeed();
+      return;
+    }
+    setStack([]);
+    setTab(i as any);
+  };
+  // no computador as telas ficam numa coluna central (o Direct usa a largura toda)
+  const pageBox = (node: React.ReactNode, full = false) =>
+    L.wide && !full ? <View style={{ flex: 1, width: "100%", maxWidth: PAGE_WIDTH, alignSelf: "center" }}>{node}</View> : node;
+
   // telas abertas por cima (direct, notificações, perfis...) ficam em camadas:
   // a Home e as telas de baixo continuam montadas, então ao voltar nada recarrega
   const stackLayer = stack.map((entry, i) => {
@@ -813,8 +856,8 @@ function Guvio() {
         style={[StyleSheet.absoluteFill, { backgroundColor: colors.bg, zIndex: 200 + i }]}
         pointerEvents={isTop ? "auto" : "none"}
       >
-        <EdgeSwipe side="left" anywhere onSwipe={back} under={colors.surface2} enabled={isTop}>
-          <SlideInScreen from={goingBack.current ? -60 : 60}>{renderScreen(entry, isTop)}</SlideInScreen>
+        <EdgeSwipe side="left" anywhere onSwipe={back} under={colors.surface2} enabled={isTop && !L.wide}>
+          <SlideInScreen from={goingBack.current ? -60 : 60}>{pageBox(renderScreen(entry, isTop), entry.name === "direct")}</SlideInScreen>
         </EdgeSwipe>
       </SafeAreaView>
     );
@@ -823,7 +866,11 @@ function Guvio() {
   const weatherText = weather ? `${weather.condition} ${weather.temperature}°C` : undefined;
 
   return (
-    <View style={[s.safe, { backgroundColor: colors.bg }]}>
+    <View style={[s.safe, { backgroundColor: colors.bg }, L.wide && { flexDirection: "row" }]}>
+    {L.wide ? (
+      <SideNav full={L.full} active={sideActive} onPress={onSide} onLogoPress={onLogoPress} unreadDm={unreadDm} unreadActivity={unread} />
+    ) : null}
+    <View style={{ flex: 1 }}>
     <SafeAreaView style={s.safe} pointerEvents={top ? "none" : "auto"}>
       <StatusBar barStyle={dark ? "light-content" : "dark-content"} backgroundColor={colors.bg} />
       {offline ? (
@@ -836,8 +883,8 @@ function Guvio() {
       {/* a Home fica sempre montada (só escondida), para manter a posição do feed */}
       <View style={tab === "home" ? s.safe : s.hidden} pointerEvents={tab === "home" ? "auto" : "none"}>
         {/* arrastar para a direita abre a câmera (story); para a esquerda, o Direct */}
-        <EdgeSwipe side="left" anywhere interactive={false} onSwipe={() => openCamera("story")}>
-        <EdgeSwipe side="right" anywhere interactive={false} onSwipe={() => push({ name: "direct" })}>
+        <EdgeSwipe side="left" anywhere interactive={false} enabled={!L.wide} onSwipe={() => openCamera("story")}>
+        <EdgeSwipe side="right" anywhere interactive={false} enabled={!L.wide} onSwipe={() => push({ name: "direct" })}>
         <ScrollView
           ref={scroll}
           style={{ flex: 1, backgroundColor: colors.bg }}
@@ -853,19 +900,18 @@ function Guvio() {
             if (layoutMeasurement.height + contentOffset.y > contentSize.height - 900) loadMore();
           }}
         >
+          <View style={L.wide ? { flexDirection: "row", justifyContent: "center", width: "100%" } : { flex: 1 }}>
+          <View style={L.wide ? { width: FEED_WIDTH, maxWidth: "100%" } : { flex: 1 }}>
           <View style={{ backgroundColor: colors.bg }}>
             <Header
+              compact={L.wide}
               locationText={location}
               onPressLocation={() => applyPlaceRef.current(true, true)}
               weatherText={weatherText}
               onOpenDirect={() => push({ name: "direct" })}
               onLogoPress={onLogoPress}
               onOpenBeta={() => push({ name: "settingsPage", kind: "feedback" })}
-              onOpenActivity={() => {
-                setUnread(false);
-                markActivitySeen();
-                push({ name: "activity" });
-              }}
+              onOpenActivity={openActivity}
               hasUnreadActivity={unread}
               unreadMessages={unreadDm}
             />
@@ -906,6 +952,9 @@ function Guvio() {
             </Text>
           ) : null}
           <View style={{ height: 110 }} />
+          </View>
+          {L.side ? <SuggestionsColumn onOpenProfile={openName} /> : null}
+          </View>
         </ScrollView>
         </EdgeSwipe>
         </EdgeSwipe>
@@ -924,7 +973,7 @@ function Guvio() {
         </Pressable>
       ) : null}
       {tab === "home" ? null : (
-        <FadeIn key={tab} from={0} duration={220} style={{ flex: 1 }}>
+        <FadeIn key={tab} from={0} duration={220} style={[{ flex: 1 }, L.wide && { width: "100%", maxWidth: PAGE_WIDTH, alignSelf: "center" }]}>
       {tab === "wardrobe" ? (
         <WardrobeView
           onAdd={() => setTab("add")}
@@ -983,6 +1032,7 @@ function Guvio() {
       )}
         </FadeIn>
       )}
+      {L.wide ? null : (
       <BottomNavLiquid
         activeTab={tab}
         onTabChange={t => {
@@ -1003,8 +1053,25 @@ function Guvio() {
           setTab(t);
         }}
       />
+      )}
+      {L.wide && tab === "home" ? (
+        <Pressable
+          onPress={() => push({ name: "direct" })}
+          accessibilityLabel="Mensagens"
+          style={[s.msgPill, { backgroundColor: colors.surface, borderColor: colors.border }, !L.side && { paddingHorizontal: 17 }]}
+        >
+          <MessageCircle size={22} color={colors.icon} />
+          {L.side ? <Text style={{ color: colors.text, fontWeight: "700", fontSize: 15 }}>Mensagens</Text> : null}
+          {unreadDm > 0 ? (
+            <View style={s.msgBadge}>
+              <Text style={{ color: "#FFF", fontSize: 10, fontWeight: "800" }}>{unreadDm > 9 ? "9+" : unreadDm}</Text>
+            </View>
+          ) : null}
+        </Pressable>
+      ) : null}
     </SafeAreaView>
       {stackLayer}
+    </View>
       <ToastHost bottom={top ? 40 : undefined} />
       <UpdateBanner />
       {top ? null : <InstallPrompt />}
@@ -1071,6 +1138,20 @@ const s = StyleSheet.create({
   safe: { flex: 1 },
   hidden: { position: "absolute", top: 0, left: 0, right: 0, bottom: 0, opacity: 0, zIndex: -1 },
   offline: { paddingHorizontal: 16, paddingVertical: 8, alignItems: "center" },
+  msgPill: {
+    position: "absolute",
+    right: 24,
+    bottom: 24,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    paddingHorizontal: 20,
+    height: 56,
+    borderRadius: 28,
+    borderWidth: StyleSheet.hairlineWidth,
+    zIndex: 50
+  },
+  msgBadge: { position: "absolute", left: 30, top: 8, minWidth: 18, height: 18, borderRadius: 9, backgroundColor: "#FF3040", alignItems: "center", justifyContent: "center", paddingHorizontal: 4 },
   newPill: {
     position: "absolute",
     top: 70,

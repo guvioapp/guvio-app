@@ -649,7 +649,7 @@ function SetRow({ label, hint, value, onChange }: { label: string; hint?: string
 
 const s = StyleSheet.create({
   root: { flex: 1, backgroundColor: "#000" },
-  preview: { flex: 1, borderRadius: 18, overflow: "hidden", backgroundColor: "#111" },
+  preview: { flex: 1, width: "100%", maxWidth: 520, alignSelf: "center", borderRadius: 18, overflow: "hidden", backgroundColor: "#111" },
   top: { position: "absolute", top: 10, left: 12, right: 12, flexDirection: "row", justifyContent: "space-between", alignItems: "center" },
   icon: { width: 44, height: 44, alignItems: "center", justifyContent: "center" },
   auto: { position: "absolute", right: 4, bottom: 6, color: "#FFF", fontSize: 10, fontWeight: "900" },

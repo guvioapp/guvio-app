@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import { useLayout } from "../services/layout";
 import { VerifiedBadge } from "./VerifiedBadge";
 import { Alert, BackHandler, Modal, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from "react-native";
 import { topPad } from "../utils/insets";
@@ -27,6 +28,7 @@ export function DirectView({
   onOpenPost?: (postId: string) => void;
 }) {
   const { colors } = useAppTheme();
+  const { wide } = useLayout();
   const [threads, setThreads] = useState<DirectThread[]>([]);
   const [open, setOpen] = useState<DirectThread | null>(initialThread || null);
   const [query, setQuery] = useState("");
@@ -105,26 +107,26 @@ export function DirectView({
     d.lastMessage.toLowerCase().includes(query.toLowerCase())
   );
 
-  if (open) {
-    return (
-      <ChatView
-        thread={open}
-        onBack={() => {
-          if (initialThread && open.id === initialThread.id) onBack();
-          else setOpen(null);
-        }}
-        onOpenProfile={onOpenProfile}
-        onOpenPost={onOpenPost}
-      />
-    );
-  }
-
   const peopleList = people.filter(p =>
     `${p.username} ${p.displayName}`.toLowerCase().includes(peopleQuery.trim().toLowerCase().replace(/^@/, ""))
   );
 
-  return (
-    <View style={[s.full, { backgroundColor: colors.bg }]}>
+  const chat = open ? (
+    <ChatView
+      key={open.id}
+      thread={open}
+      onBack={() => {
+        if (!wide && initialThread && open.id === initialThread.id) onBack();
+        else setOpen(null);
+      }}
+      onOpenProfile={onOpenProfile}
+      onOpenPost={onOpenPost}
+    />
+  ) : null;
+  if (open && !wide) return chat;
+
+  const list = (
+    <View style={[s.full, { backgroundColor: colors.bg }, wide && { paddingBottom: 0 }]}>
       <ScreenHeader
         title="Direct"
         onBack={onBack}
@@ -226,6 +228,27 @@ export function DirectView({
       </ScrollView>
     </View>
   );
+
+  // computador: conversas à esquerda e a conversa aberta à direita (igual ao Instagram)
+  if (wide)
+    return (
+      <View style={{ flex: 1, flexDirection: "row", backgroundColor: colors.bg }}>
+        <View style={{ width: 380, borderRightWidth: StyleSheet.hairlineWidth, borderRightColor: colors.border }}>{list}</View>
+        <View style={{ flex: 1 }}>
+          {chat || (
+            <View style={s.empty}>
+              <MessageCircle size={64} color={colors.text} strokeWidth={1.2} />
+              <Text style={[s.emptyTitle, { color: colors.text, fontSize: 20 }]}>Suas mensagens</Text>
+              <Text style={{ color: colors.muted }}>Escolha uma conversa ou comece uma nova.</Text>
+              <Pressable onPress={() => setPicking(true)} style={{ backgroundColor: "#0095F6", paddingHorizontal: 16, paddingVertical: 9, borderRadius: 10, marginTop: 10 }}>
+                <Text style={{ color: "#FFF", fontWeight: "700" }}>Enviar mensagem</Text>
+              </Pressable>
+            </View>
+          )}
+        </View>
+      </View>
+    );
+  return list;
 }
 
 const s = StyleSheet.create({

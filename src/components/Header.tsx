@@ -11,6 +11,7 @@ export function Header({
   onOpenBeta,
   onOpenActivity,
   onLogoPress,
+  compact,
   hasUnreadActivity = true,
   unreadMessages = 0
 }: {
@@ -24,12 +25,15 @@ export function Header({
   onOpenActivity?: () => void;
   /** toques no logo (10 seguidos liga o modo desenvolvedor no beta) */
   onLogoPress?: () => void;
+  /** versão de computador: logo e ícones ficam na barra lateral, aqui só a cidade e o clima */
+  compact?: boolean;
   hasUnreadActivity?: boolean;
   unreadMessages?: number;
 }) {
   const { colors } = useAppTheme();
   return (
-    <View style={styles.c}>
+    <View style={[styles.c, compact && { paddingTop: 22, justifyContent: "flex-end" }]}>
+      {compact ? null : (
       <View style={styles.left}>
         <Pressable onPress={onLogoPress} style={styles.left} accessibilityLabel="GUVIO">
           <Image source={require("../assets/logo.png")} style={styles.logoBadge} />
@@ -41,6 +45,7 @@ export function Header({
           </Pressable>
         ) : null}
       </View>
+      )}
 
       <View style={styles.right}>
         <Pressable onPress={onPressLocation} hitSlop={8} style={styles.loc}>
@@ -50,6 +55,8 @@ export function Header({
           </Text>
         </Pressable>
 
+        {compact ? null : (
+        <>
         <Pressable onPress={onOpenActivity} hitSlop={10} style={styles.iconBtn}>
           <Heart size={22} color={colors.icon} />
           {hasUnreadActivity && <View style={styles.activityBadgeDot} />}
@@ -65,6 +72,8 @@ export function Header({
             </View>
           )}
         </Pressable>
+        </>
+        )}
       </View>
     </View>
   );

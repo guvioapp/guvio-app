@@ -3,6 +3,7 @@ import { Modal, Pressable, StyleSheet, Text, View } from "react-native";
 import { useSafeAreaInsets } from "react-native-safe-area-context";
 import { CircleFadingPlus, Clapperboard, Grid3x3, Heart, Shirt } from "lucide-react-native";
 import { useAppTheme } from "../../context/AppTheme";
+import { useLayout } from "../../services/layout";
 
 export type CreateChoice = "post" | "story" | "video" | "highlight" | "clothing";
 
@@ -10,6 +11,7 @@ export type CreateChoice = "post" | "story" | "video" | "highlight" | "clothing"
 export function CreateSheet({ visible, onClose, onPick }: { visible: boolean; onClose: () => void; onPick: (c: CreateChoice) => void }) {
   const { colors } = useAppTheme();
   const insets = useSafeAreaInsets();
+  const { wide } = useLayout();
   const rows: { id: CreateChoice; label: string; Icon: any }[] = [
     { id: "video", label: "Drip (vídeo)", Icon: Clapperboard },
     { id: "post", label: "Publicação", Icon: Grid3x3 },
@@ -19,8 +21,15 @@ export function CreateSheet({ visible, onClose, onPick }: { visible: boolean; on
   ];
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={onClose}>
-      <Pressable style={{ flex: 1, backgroundColor: "rgba(0,0,0,.35)" }} onPress={onClose} />
-      <View style={[s.sheet, { backgroundColor: colors.surface, paddingBottom: insets.bottom + 18 }]}>
+      <Pressable style={[{ flex: 1, backgroundColor: "rgba(0,0,0,.35)" }, wide && StyleSheet.absoluteFill]} onPress={onClose} />
+      {/* no computador vira uma janelinha no meio da tela */}
+      <View
+        style={[
+          s.sheet,
+          { backgroundColor: colors.surface, paddingBottom: insets.bottom + 18 },
+          wide && { position: "absolute", alignSelf: "center", top: "28%", width: 380, borderRadius: 16 }
+        ]}
+      >
         <View style={[s.grabber, { backgroundColor: colors.border }]} />
         <Text style={[s.title, { color: colors.text }]}>Criar</Text>
         {rows.map(({ id, label, Icon }) => (
