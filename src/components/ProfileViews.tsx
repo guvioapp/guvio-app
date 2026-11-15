@@ -837,7 +837,9 @@ export function MyProfileView({
       {/* Edit Profile Modal */}
       <Modal visible={editModalVisible} transparent animationType="slide" onRequestClose={() => setEditModalVisible(false)}>
         <View style={s.modalBack}>
-          <View style={[s.modal, { backgroundColor: colors.bg }]}>
+          {/* rola por dentro: em tela baixa (notebook) nada fica cortado */}
+          <View style={[s.modal, { backgroundColor: colors.bg, maxHeight: "92%", padding: 0, overflow: "hidden" }]}>
+            <ScrollView style={{ width: "100%" }} contentContainerStyle={{ padding: 20, alignItems: "center", gap: 10 }} keyboardShouldPersistTaps="handled">
             <View style={{ width: "100%", flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
               <Text style={[s.modalH, { color: colors.text }]}>Editar perfil</Text>
               <Pressable onPress={() => setEditModalVisible(false)}>
@@ -925,6 +927,7 @@ export function MyProfileView({
             <Pressable onPress={handleSaveProfile} style={[s.saveBtn, { backgroundColor: colors.text }]}>
               <Text style={{ color: colors.bg, fontWeight: "700" }}>Salvar alterações</Text>
             </Pressable>
+            </ScrollView>
           </View>
         </View>
       </Modal>
