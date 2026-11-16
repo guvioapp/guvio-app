@@ -125,7 +125,7 @@ export function StoryViewerModal({
     };
   }, [visible, currentStory?.id, isPaused, mediaReady, dur]);
 
-  const player = useVideoPlayer(visible && currentStory?.videoUrl ? currentStory.videoUrl : null, p => {
+  const player = useVideoPlayer(visible && currentStory?.videoUrl ? { uri: currentStory.videoUrl, useCaching: true } : null, p => {
     p.loop = false;
     p.play();
   });

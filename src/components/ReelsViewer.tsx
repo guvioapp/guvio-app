@@ -372,7 +372,8 @@ function ActivePlayer({
   onToggleMute: () => void;
   onDoubleTap: () => void;
 }) {
-  const player = useVideoPlayer(uri, p => {
+  // guarda o vídeo no aparelho: repetir (loop) ou rever não baixa de novo
+  const player = useVideoPlayer(uri ? { uri, useCaching: true } : null, p => {
     p.loop = true;
     p.muted = muted;
     p.play();

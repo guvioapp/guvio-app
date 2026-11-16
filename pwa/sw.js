@@ -2,11 +2,14 @@
 // - páginas: sempre tenta a rede primeiro (para pegar versão nova); sem internet, usa a última salva
 // - arquivos do app (/_expo/, ícones): guarda no cache, porque o nome já muda a cada versão
 const CACHE = "guvio-v1";
+// fotos do Supabase: o nome de cada arquivo nunca se repete, então dá para guardar e não baixar de novo
+const MEDIA = "guvio-media-v1";
+const MEDIA_MAX = 400;
 
 self.addEventListener("install", () => self.skipWaiting());
 self.addEventListener("activate", e => {
   e.waitUntil(
-    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k)))).then(() => self.clients.claim())
+    caches.keys().then(keys => Promise.all(keys.filter(k => k !== CACHE && k !== MEDIA).map(k => caches.delete(k)))).then(() => self.clients.claim())
   );
 });
 
@@ -14,7 +17,30 @@ self.addEventListener("fetch", e => {
   const req = e.request;
   if (req.method !== "GET") return;
   const url = new URL(req.url);
-  if (url.origin !== self.location.origin) return; // Supabase, fotos etc. vão direto
+  if (
+    url.hostname.endsWith(".supabase.co") &&
+    url.pathname.includes("/storage/v1/object/public/") &&
+    /\.(jpe?g|png|webp|gif|heic)$/i.test(url.pathname) &&
+    !req.headers.has("range")
+  ) {
+    e.respondWith(
+      caches.open(MEDIA).then(c =>
+        c.match(req.url).then(
+          hit =>
+            hit ||
+            // pede com CORS (o Supabase permite): resposta legível, que ocupa o tamanho real no cache
+            fetch(req.url, { mode: "cors", credentials: "omit" })
+              .then(res => {
+                if (res.ok) c.put(req.url, res.clone()).then(() => trimMedia(c));
+                return res;
+              })
+              .catch(() => fetch(req))
+        )
+      )
+    );
+    return;
+  }
+  if (url.origin !== self.location.origin) return; // Supabase (dados), vídeos etc. vão direto
   if (url.pathname.endsWith("/version.json")) return;
 
   if (req.mode === "navigate") {
@@ -46,6 +72,10 @@ self.addEventListener("fetch", e => {
     );
   }
 });
+
+function trimMedia(c) {
+  return c.keys().then(keys => (keys.length > MEDIA_MAX ? Promise.all(keys.slice(0, keys.length - MEDIA_MAX).map(k => c.delete(k))) : null));
+}
 
 // ---------------------------------------------------------------------
 // Avisos no celular (push): o servidor manda {title, body, url, tag}

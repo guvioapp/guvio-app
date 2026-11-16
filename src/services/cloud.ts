@@ -87,7 +87,6 @@ function clampAspect(a?: number) {
 }
 
 async function compress(uri: string, folder = ""): Promise<string> {
-  if (Platform.OS === "web") return uri;
   try {
     const { manipulateAsync, SaveFormat } = require("expo-image-manipulator") as typeof import("expo-image-manipulator");
     const size = await imageSize(uri);
@@ -126,7 +125,7 @@ export async function uploadImage(uri: string, folder: string): Promise<string> 
     body = bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer;
   }
 
-  check(await db().storage.from("media").upload(path, body, { contentType, upsert: false }));
+  check(await db().storage.from("media").upload(path, body, { contentType, upsert: false, cacheControl: "31536000" }));
   return db().storage.from("media").getPublicUrl(path).data.publicUrl;
 }
 
@@ -146,7 +145,7 @@ export async function uploadVideo(uri: string): Promise<string> {
   }
   // H.264 em .mov toca no navegador quando marcado como mp4
   const contentType = safeExt === "webm" ? "video/webm" : "video/mp4";
-  check(await db().storage.from("media").upload(path, body, { contentType, upsert: false }));
+  check(await db().storage.from("media").upload(path, body, { contentType, upsert: false, cacheControl: "31536000" }));
   return db().storage.from("media").getPublicUrl(path).data.publicUrl;
 }
 
