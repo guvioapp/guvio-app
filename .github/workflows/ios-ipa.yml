@@ -9,7 +9,8 @@ on:
 
 jobs:
   build-ios:
-    runs-on: macos-15
+    # o Mac Intel tem fila menor (os Mac arm64 do GitHub estão sem capacidade)
+    runs-on: macos-15-intel
     env:
       CI: 1
       # sem permissão de push no IPA (Apple ID grátis não aceita)
