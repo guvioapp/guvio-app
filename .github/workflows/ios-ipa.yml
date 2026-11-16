@@ -65,3 +65,14 @@ jobs:
         with:
           name: GUVIO-ipa
           path: GUVIO.ipa
+
+      # avisa no celular (app ntfy, tópico guvio-ipa-b3efb49ab977) quando o IPA termina
+      - name: Avisar no celular
+        if: always()
+        run: |
+          URL="https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          if [ "${{ job.status }}" = "success" ]; then
+            curl -s -H "Title: IPA do GUVIO pronto" -H "Tags: white_check_mark,iphone" -H "Click: $URL" -d "Build ${{ github.run_number }} pronto para baixar e instalar pelo Sideloadly." "https://ntfy.sh/${{ secrets.NTFY_TOPIC || 'guvio-ipa-b3efb49ab977' }}" || true
+          else
+            curl -s -H "Title: IPA do GUVIO falhou" -H "Tags: x,iphone" -H "Priority: high" -H "Click: $URL" -d "Build ${{ github.run_number }} deu erro. Toque para ver." "https://ntfy.sh/${{ secrets.NTFY_TOPIC || 'guvio-ipa-b3efb49ab977' }}" || true
+          fi
