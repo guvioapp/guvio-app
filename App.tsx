@@ -371,6 +371,8 @@ function Guvio() {
       handleAuthRedirect(url).then(ok => ok && setAuthenticated(true));
     });
     const authSub = supabase?.auth.onAuthStateChange((event, session) => {
+      // quem já estava logado ao abrir o app também é ligado à conta na medição
+      if (event === "INITIAL_SESSION" && session) identifyUser(session.user.id);
       if (event === "SIGNED_IN" && session) {
         setAuthenticated(true);
         identifyUser(session.user.id);
