@@ -49,7 +49,7 @@ export function HighlightsRow({
   if (!isMe && list.length === 0) return null;
 
   const group: UserStoryGroup | null = playing
-    ? { id: userId, username, displayName: playing.title, avatar, isMe: false, hasUnseen: false, stories: playing.stories.map(s => ({ ...s, seen: true })) }
+    ? { id: userId, username, displayName: playing.title, avatar, isMe: false, readOnly: !!isMe, hasUnseen: false, stories: playing.stories.map(s => ({ ...s, seen: true })) }
     : null;
 
   const manage = (h: Highlight) =>

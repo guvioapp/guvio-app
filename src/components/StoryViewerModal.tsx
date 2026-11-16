@@ -506,7 +506,7 @@ export function StoryViewerModal({
             </View>
           ) : null}
 
-          {!currentGroup.isMe && !holding ? (
+          {!currentGroup.isMe && !currentGroup.readOnly && !holding ? (
             <View style={s.reactionsRow}>
               {["❤️", "🔥", "😍", "😂", "👏", "✨"].map(emoji => (
                 <Pressable key={emoji} onPress={() => handleSendReaction(emoji)} style={s.emojiBtn} hitSlop={4}>
@@ -527,7 +527,7 @@ export function StoryViewerModal({
 
         {/* embaixo do story: responder / reações, ou Quem viu e Apagar */}
         <View style={{ flex: 1, alignSelf: "stretch", justifyContent: "center", opacity: holding ? 0 : 1 }}>
-          {currentGroup.isMe ? (
+          {currentGroup.readOnly ? null : currentGroup.isMe ? (
             <View style={s.ownerBar}>
               <Pressable onPress={openViewers} style={s.ownerBtn} hitSlop={8}>
                 <Eye size={20} color="#FFF" />

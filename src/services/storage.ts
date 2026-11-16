@@ -308,6 +308,8 @@ export async function loadMyPosts(): Promise<FeedPost[]> {
   if (await isCloud()) {
     const me = await cloud.getMyProfile();
     myPostsCache = await cloud.fetchUserPosts(me.id);
+    // guarda no aparelho: na próxima vez o Perfil abre com os looks na hora
+    FastStorage.setItemSync(`guvio_my_posts_${me.id}`, myPostsCache.slice(0, 60));
     return myPostsCache;
   }
   const all: FeedPost[] = FastStorage.getItemSync(KEYS.POSTS, []);
@@ -457,7 +459,9 @@ export function getCachedMyProfile(): UserProfile | null {
 }
 
 export function getCachedMyPosts(): FeedPost[] | null {
-  return myPostsCache;
+  if (myPostsCache) return myPostsCache;
+  const me = getCachedMyProfile();
+  return me?.id ? FastStorage.getItemSync<FeedPost[] | null>(`guvio_my_posts_${me.id}`, null) : null;
 }
 
 export function clearMyCache() {

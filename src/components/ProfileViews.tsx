@@ -95,9 +95,11 @@ function Grid({
   colors,
   onSelectPost,
   emptyTitle = "Nenhuma publicação ainda",
-  emptySubtitle = "Os looks que você publicar aparecem aqui."
+  emptySubtitle = "Os looks que você publicar aparecem aqui.",
+  loading
 }: {
   posts: FeedPost[];
+  loading?: boolean;
   colors: any;
   onSelectPost?: (p: FeedPost) => void;
   emptyTitle?: string;
@@ -109,6 +111,7 @@ function Grid({
     }
   }, [posts]);
 
+  if (loading && posts.length === 0) return <GridSkeleton count={9} columns={3} ratio={1.25} gap={2} />;
   if (posts.length === 0) {
     return (
       <View style={s.emptyGrid}>
@@ -500,6 +503,8 @@ export function MyProfileView({
   // começa com o último perfil salvo (sem piscar a tela de exemplo)
   const [profile, setProfileState] = useState<UserProfile | null>(() => getCachedMyProfile());
   const [userPosts, setUserPosts] = useState<FeedPost[]>(() => getCachedMyPosts() || []);
+  // sem nada guardado ainda: mostra a grade carregando, não "Nenhum look postado"
+  const [postsLoaded, setPostsLoaded] = useState(() => getCachedMyPosts() !== null);
   const [savedPosts, setSavedPosts] = useState<FeedPost[]>([]);
   const [selectedPost, setSelectedPost] = useState<FeedPost | null>(null);
   const [currentUserId, setCurrentUserId] = useState<string | undefined>();
@@ -562,7 +567,12 @@ export function MyProfileView({
   }, []);
 
   useEffect(() => {
-    loadMyPosts().then(setUserPosts).catch(() => {});
+    loadMyPosts()
+      .then(p => {
+        setUserPosts(p);
+        setPostsLoaded(true);
+      })
+      .catch(() => setPostsLoaded(true));
     loadSavedOnlyPosts().then(setSavedPosts).catch(() => {});
   }, [postsVersion]);
 
@@ -646,7 +656,7 @@ export function MyProfileView({
         <View style={s.top}>
           <FastImage source={profile.avatar} style={s.bigAvatar} contentFit="cover" transition={100} />
           <View style={s.stats}>
-            <Stat v={userPosts.length.toString()} l="posts" colors={colors} />
+            <Stat v={postsLoaded ? userPosts.length.toString() : "–"} l="posts" colors={colors} />
             <Stat
               v={profile.followers.toString()}
               l="seguidores"
@@ -750,6 +760,7 @@ export function MyProfileView({
         {activeTab === "posts" && (
           <Grid
             posts={userPosts}
+            loading={!postsLoaded}
             colors={colors}
             onSelectPost={p => (onOpenPostList ? onOpenPostList(userPosts, p.id) : onOpenPost ? onOpenPost(p.id) : setSelectedPost(p))}
             emptyTitle="Nenhum look postado"

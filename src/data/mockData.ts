@@ -205,6 +205,8 @@ export interface UserStoryGroup {
   hasUnseen?: boolean;
   /** tem story novo só para melhores amigos (anel verde) */
   hasClose?: boolean;
+  /** destaque do próprio perfil: só assistir (sem responder, reagir ou apagar) */
+  readOnly?: boolean;
   stories: StoryItem[];
 }
 
