@@ -103,6 +103,3 @@ The **Gerar IPA iOS (sem assinatura)** workflow builds an unsigned `GUVIO.ipa` o
 
 - **Octavio Rodrigues Schwab** · cofundador · mobile developer · [GitHub](https://github.com/whoistavs) · [LinkedIn](https://www.linkedin.com/in/octavio-schwab)
 - **Gustavo Reis** · cofundador · [GitHub](https://github.com/gustavogreis)
-
-GUVIO = **GU**stavo + Octa**VIO**.
-- **Gustavo Reis** · [GitHub](https://github.com/gustavogreis)
